@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>早ㄤ你好</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="bag.png" type="image/jpg">
+    <!-- 引入 SweetAlert2  -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+</head>
+
+<body>
+    <div class="container">
+        <div id="setup">
+            <h1 class="mybox">
+
+                <div style="display: flex; justify-content: center; align-items: center">
+                    <img src="bag.png" alt="Logo" class="logo" style="margin-right: 10px;">
+                    <span style="text-align: center;">Breakfast</span>
+                </div>
+
+
+            </h1>
+            <label for="totalOptions">選項總數：</label>
+            <select id="totalOptions" class="styled-select">
+                <option value="4">4</option>
+                <option value="8">8</option>
+                <option value="16">16</option>
+                <option value="32">32</option>
+            </select>
+
+            <br><br>
+            <button class="button" onclick="startTest()">開始測驗</button>
+        </div>
+        <div id="test" class="hidden">
+            <h1 class="mybox" id="testTitle"></h1>
+            <p id="comparison">請選擇以下兩個選項之一：</p>
+            <div id="choices">
+                <button class="option-button" id="choice1" onclick="makeChoice('1')">
+                    <img class="option-image" id="image1" alt="option1">
+                    <span class="overlay-text"></span>
+                </button>
+                <button class="option-button" id="choice2" onclick="makeChoice('2')">
+                    <img class="option-image" id="image2" alt="option2">
+                    <span class="overlay-text"></span>
+                </button>
+            </div>
+        </div>
+        <div id="result" class="hidden">
+            <h1 class="mybox" id="finalResult"></h1>
+            <button class="button" onclick="startNewTest()">新測驗</button>
+            <button class="button" onclick="restartTest()">重新測驗⟲</button>
+        </div>
+    </div>
+
+    <script>
+        const optionsList = [
+            { name: "燒餅油條", image: "option_image/燒餅油條.jpg" },
+            { name: "蛋餅", image: "option_image/蛋餅.png" },
+            { name: "饅頭夾蛋", image: "option_image/饅頭夾蛋.jpg" },
+            { name: "火腿三明治", image: "option_image/火腿三明治.jpg" },
+            { name: "蔥油餅", image: "option_image/蔥油餅.jpg" },
+            { name: "肉鬆麵包", image: "option_image/肉鬆麵包.jpeg" },
+            { name: "小籠包", image: "option_image/小籠包.jpg" },
+            { name: "蘿蔔糕", image: "option_image/蘿蔔糕.png" },
+            { name: "漢堡", image: "option_image/漢堡.jpg" },
+            { name: "奶茶", image: "option_image/奶茶.jpg" },
+            { name: "豆漿", image: "option_image/豆漿.png" },
+            { name: "咖啡", image: "option_image/咖啡.png" },
+            { name: "紅茶", image: "option_image/紅茶.jpg" },
+            { name: "米漿", image: "option_image/米漿.jpg" },
+            { name: "皮蛋瘦肉粥", image: "option_image/皮蛋瘦肉粥.jpg" },
+            { name: "巧克力吐司", image: "option_image/巧克力吐司.jpg" },
+            { name: "饅頭", image: "option_image/饅頭.jpg" },
+            { name: "粽子", image: "option_image/粽子.png" },
+            { name: "水煎包", image: "option_image/水煎包.jpg" },
+            { name: "薯餅", image: "option_image/薯餅.jpg" },
+            { name: "燻雞三明治", image: "option_image/燻雞三明治.jpg" },
+            { name: "炒麵", image: "option_image/炒麵.jpg" },
+            { name: "炒米粉", image: "option_image/炒米粉.jpg" },
+            { name: "鐵板麵", image: "option_image/鐵板麵.jpg" },
+            { name: "飯糰", image: "option_image/飯糰.jpg" },
+            { name: "起司蛋餅", image: "option_image/起司蛋餅.jpg" },
+            { name: "蝦仁腸粉", image: "option_image/蝦仁腸粉.jpg" },
+            { name: "花生厚片", image: "option_image/花生厚片.jpg" },
+            { name: "鮪魚吐司", image: "option_image/鮪魚吐司.png" },
+            { name: "火腿蛋吐司", image: "option_image/火腿蛋吐司.png" },
+            { name: "奶酥厚片", image: "option_image/奶酥厚片.jpg" },
+            { name: "培根蛋堡", image: "option_image/培根蛋堡.jpg" }
+        ];
+
+        let totalOptions = 0;
+        let options = {}; // 儲存選手及其勝利次數
+        let currentRoundOptions = [];  // 當前比賽輪次的選手
+        let Roundwinners = [];     // 下一輪晉級的選手
+        let roundNum = 1;  // 當前輪數
+
+        function startTest() {
+            totalOptions = parseInt(document.getElementById("totalOptions").value);
+
+            if (isNaN(totalOptions) || totalOptions < 2) {
+                Swal.fire({
+                    title: '錯誤！',
+                    text: '請選擇選項總數！',
+                    icon: 'error',
+                    confirmButtonText: '確定'
+                });
+                return;
+            }
+
+            // 隱藏設置界面，顯示測驗界面
+            document.getElementById("setup").classList.add("hidden");
+            document.getElementById("test").classList.remove("hidden");
+            document.getElementById("testTitle").innerText = "Breakfast！";
+
+            // 隨機打亂選項列表
+            const shuffledOptions = [...optionsList];
+            for (let i = shuffledOptions.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledOptions[i], shuffledOptions[j]] = [shuffledOptions[j], shuffledOptions[i]];
+            }
+
+            // 根據選擇的數量顯示選項
+            options = {};
+            currentRoundOptions = [];
+            for (let i = 0; i < totalOptions; i++) {
+                options[`option_${i + 1}`] = { name: shuffledOptions[i].name, wins: 0, image: shuffledOptions[i].image };
+                currentRoundOptions.push(`option_${i + 1}`);
+            }
+
+            nextComparison();
+        }
+
+
+        function nextComparison() {
+            if (currentRoundOptions.length < 2) {
+                // 如果選手數量少於 2，直接結束比賽
+                document.getElementById("test").classList.add("hidden");
+                document.getElementById("result").classList.remove("hidden");
+                displayRanking();
+                return;
+            }
+
+            // 隨機選擇兩個選手進行比賽
+            const randomIndex1 = Math.floor(Math.random() * currentRoundOptions.length);
+            let randomIndex2 = Math.floor(Math.random() * currentRoundOptions.length);
+
+            while (randomIndex1 === randomIndex2) {
+                randomIndex2 = Math.floor(Math.random() * currentRoundOptions.length);
+            }
+
+            const option1 = currentRoundOptions[randomIndex1];
+            const option2 = currentRoundOptions[randomIndex2];
+
+            // 顯示選項名稱和圖片
+            const choice1 = document.getElementById("choice1");
+            const choice2 = document.getElementById("choice2");
+
+            choice1.querySelector('.overlay-text').innerText = options[option1].name;
+            choice2.querySelector('.overlay-text').innerText = options[option2].name;
+
+            document.getElementById("image1").src = options[option1].image;
+            document.getElementById("image2").src = options[option2].image;
+
+
+            choice1.dataset.current = option1;
+            choice2.dataset.current = option2;
+        }
+
+        function makeChoice(choice) {
+            const choice1 = document.getElementById("choice1");
+            const choice2 = document.getElementById("choice2");
+            const selected = choice === '1' ? choice1.dataset.current : choice2.dataset.current;
+
+            // 更新選手勝利次數
+            options[selected].wins++;
+            Roundwinners.push(selected);
+
+            // 從當前輪次選手中刪除已選擇的選手
+            currentRoundOptions = currentRoundOptions.filter(option => option !== selected);
+
+            // 移除輸掉的選手
+            const loser = choice === '1' ? choice2.dataset.current : choice1.dataset.current;
+            currentRoundOptions = currentRoundOptions.filter(option => option !== loser);
+
+            // 檢查是否有足夠的選手繼續比賽
+            if (currentRoundOptions.length === 0) {
+                // 如果本輪比賽結束並且選手陣列已空，進入下一輪
+                if (Roundwinners.length > 1) {
+                    currentRoundOptions = Roundwinners;
+                    Roundwinners = [];
+                    nextComparison();  // 進入下一輪比賽
+                }
+                else if (Roundwinners.length == 1) {
+                    document.getElementById("test").classList.add("hidden");
+                    document.getElementById("result").classList.remove("hidden");
+                    displayRanking();
+                    return;
+                }
+            } else {
+                nextComparison();  // 繼續下一次比賽
+            }
+        }
+
+        function displayRanking() {
+            const resultContainer = document.getElementById("finalResult");
+            resultContainer.innerHTML = "<h3>排行榜</h3>";
+
+            const sortedOptions = Object.keys(options)
+                .sort((a, b) => options[b].wins - options[a].wins);
+
+            sortedOptions.forEach((option, index) => {
+                resultContainer.innerHTML += `
+            <div class="ranking-item">
+                <div class="ranking-position">${index + 1}</div>
+                <div class="ranking-info">
+                    <p class="ranking-name">${options[option].name}</p>
+                    <p class="ranking-score">Score: ${options[option].wins}</p>
+                </div>
+                <img class="ranking-image" src="${options[option].image}" alt="${options[option].name}">
+            </div>`;
+            });
+        }
+
+        function restartTest() {
+            document.getElementById("result").classList.add("hidden");
+            Object.keys(options).forEach(option => {
+                options[option].wins = 0;
+            });
+            currentRoundOptions = Object.keys(options);
+            Roundwinners = [];
+            document.getElementById("test").classList.remove("hidden");
+            nextComparison();
+        }
+
+        function startNewTest() {
+            totalOptions = 0;
+            options = {};
+            currentRoundOptions = [];
+
+            document.getElementById("setup").classList.remove("hidden");
+            document.getElementById("test").classList.add("hidden");
+            document.getElementById("result").classList.add("hidden");
+
+            document.getElementById("totalOptions").value = "";
+            document.getElementById("finalResult").innerHTML = "";
+        }
+    </script>
+</body>
+
+</html>
